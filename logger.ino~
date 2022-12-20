@@ -1,0 +1,65 @@
+#include <Arduino.h>
+// Create an IntervalTimer object 
+IntervalTimer myLogger;
+IntervalTimer myControlLoop;
+volatile long N_sample = 0;// then number of samples
+volatile long N_control = 0;//control loop counts
+volatile int phase = 0;
+int pressure; // the value of the sensor
+int pressureCommanded;
+int pressureError;
+const int ledPin = LED_BUILTIN;  // the pin with a LED
+const int pressurePin = 0;
+const int fluidIn  = 2;
+const int fluidOut = 3;
+
+// The interrupt will blink the LED, and keep
+// track of how many times it has blinked.
+int ledState = LOW;
+volatile unsigned long blinkCount = 0; // use volatile for shared variables
+
+// functions called by IntervalTimer should be short, run as quickly as
+
+void ControlLoop(){
+  N_control = N_control + 1;
+  phase = N_control % 2;
+  pressure = analogRead(pressurePin);
+  //pressureError = pressureCommanded-pressure;
+  if (phase < 1){ //fill
+    
+    analogWrite(fluidIn, 250);
+    analogWrite(fluidOut,0)  ;
+  }
+  else{            //empty
+    analogWrite(fluidIn, 0);
+    analogWrite(fluidOut,250);
+  }
+
+}
+  
+// possible, and should avoid calling other functions if possible.
+void writeData() {
+  N_sample = N_sample + 1;
+  
+  Serial.print(N_sample);
+  Serial.print(",");
+  Serial.println(pressure);
+}
+
+void setup() {
+  pinMode(ledPin,   OUTPUT);
+  pinMode(fluidIn,  OUTPUT);
+  pinMode(fluidOut, OUTPUT);
+  
+  Serial.begin(9600);
+  myLogger.begin(writeData,          10000);  // writeData to run every 0.01 seconds
+  myControlLoop.begin(ControlLoop,  1000000); // control every second
+}
+
+
+
+// The main program will print the blink count
+// to the Arduino Serial Monitor
+void loop() {
+ 
+}
