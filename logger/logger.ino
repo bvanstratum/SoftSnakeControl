@@ -5,15 +5,20 @@
 // Create an IntervalTimer object 
 IntervalTimer myLogger;
 IntervalTimer myControlLoop;
-const    int controlPeriod  = 1000; //in micro seconds 1000 => 1kHz
+const    int controlPeriod  = 100; //in micro seconds 1000 => 1kHz 100 >10 kHz
 volatile long N_sample      = 0;// then number of samples
 volatile long N_control     = 0;//control loop counts
+volatile unsigned long startTime;
+volatile unsigned long stopTime;
 volatile int phase          = 0;
 volatile int N_phase;             // the number of control interupts per phase
-volatile float frequency    = .1; //hz
+volatile float frequency; //hz
 const    int Pmax           = 200; // this is the level that corresponds to about 30 psi
+volatile bool running       = false;
 
 #define K_P   10
+#define writeDataInterval 1 // in ms
+#define N_CYCLES 10 // the number of cycles to perform during any test 
 
   
 int pressure; // the value of the sensor
@@ -81,12 +86,15 @@ void ControlLoop(){
   
 // possible, and should avoid calling other functions if possible.
 void writeData() {
+if (running) {
+    
     N_sample = N_sample + 1;
     Serial.print(fluidInVoltage)   ;Serial.print(",");
     Serial.print(fluidOutVoltage)  ;Serial.print(",");    
     Serial.print(pressureCommanded);Serial.print(",");
     Serial.print(pressureError)    ;Serial.print(",");
     Serial.println(pressure);
+  }
 }
 
 void setup() {
@@ -94,8 +102,9 @@ void setup() {
   pinMode(fluidIn,  OUTPUT);
   pinMode(fluidOut, OUTPUT);
   pinMode(pressurePin,INPUT);
-  Serial.begin(9600);
-  myLogger.begin(writeData,          10000);  // writeData to run every 0.01 seconds
+  // Serial.begin(9600);
+  Serial.begin(2000000);
+  myLogger.begin(writeData,          writeDataInterval*1000);  // writeData to run every 0.01 seconds
   myControlLoop.begin(ControlLoop,  controlPeriod); // control every second
   N_phase = 1e6/controlPeriod/frequency;
   Serial.println(N_phase);
@@ -107,5 +116,30 @@ void setup() {
 // The main program will print the blink count
 // to the Arduino Serial Monitor
 void loop() {
+  
+  
+if (running) {
+  if (millis() > stopTime){
+  running = false;
+  Serial.printf("done\n");
+  }
+  
+  
+}
+else{
+   Serial.println("enter the frequency in Hz ");
+   while(!Serial.available()){}
+   frequency = Serial.parseFloat();
+   Serial.read();   
+   running = true;
+   startTime = millis();
+   stopTime = N_CYCLES*1000/frequency+startTime;
+   Serial.printf("-----NEW TEST---------\r\n"
+                 "frequency: %f\r\n"
+                 "start time %d\r\n"
+                 "stop time  %d\r\n",frequency,startTime,stopTime);
+   
+  
+}
  
 }
