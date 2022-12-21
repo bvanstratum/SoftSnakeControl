@@ -108,7 +108,6 @@ void setup() {
   Serial.begin(2000000);
   myLogger.begin(writeData,          writeDataInterval*1000);  // writeData to run every 0.01 seconds
   myControlLoop.begin(ControlLoop,  controlPeriod); // control every second
-  N_phase = 1e6/controlPeriod/frequency;
   Serial.println(N_phase);
   
 }
@@ -133,6 +132,7 @@ else{
    Serial.println("enter the frequency in Hz ");
    while(!Serial.available()){}
    frequency = Serial.parseFloat();
+   N_phase = 1e6/controlPeriod/frequency;
    Serial.read();   
    running = true;
    startTime = millis();
