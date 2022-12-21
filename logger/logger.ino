@@ -17,9 +17,9 @@ const    int Pmax           = 200; // this is the level that corresponds to abou
 volatile bool running       = false;
 
 #define K_P   10
-#define writeDataInterval 1 // in ms
+#define writeDataInterval 2 // in ms
 #define N_CYCLES 10 // the number of cycles to perform during any test 
-
+#define WRITING_DATA 1
   
 int pressure; // the value of the sensor
 float   pressureCommanded;
@@ -87,13 +87,15 @@ void ControlLoop(){
 // possible, and should avoid calling other functions if possible.
 void writeData() {
 if (running) {
-    
+    if(WRITING_DATA){
     N_sample = N_sample + 1;
+    Serial.print(N_sample)         ;Serial.print(",");
     Serial.print(fluidInVoltage)   ;Serial.print(",");
     Serial.print(fluidOutVoltage)  ;Serial.print(",");    
     Serial.print(pressureCommanded);Serial.print(",");
     Serial.print(pressureError)    ;Serial.print(",");
     Serial.println(pressure);
+    }
   }
 }
 
@@ -121,6 +123,7 @@ void loop() {
 if (running) {
   if (millis() > stopTime){
   running = false;
+  N_sample = 0;
   Serial.printf("done\n");
   }
   
@@ -134,11 +137,15 @@ else{
    running = true;
    startTime = millis();
    stopTime = N_CYCLES*1000/frequency+startTime;
-   Serial.printf("-----NEW TEST---------\r\n"
-                 "frequency: %f\r\n"
-                 "start time %d\r\n"
-                 "stop time  %d\r\n",frequency,startTime,stopTime);
-   
+//data about the run   
+   Serial.printf("-----NEW TEST-------\r\n"
+                 "frequency:    %f Hz\r\n"
+                 "start time    %d ms\r\n"
+                 "stop time     %d ms\r\n"
+                 "Sample Prd    %d ms\r\n"
+                 "Number Cylces %d \r\n",frequency,startTime,stopTime,writeDataInterval,N_CYCLES);
+   //data column labels
+Serial.println("N_sample,fluidInVoltage,fluidOutVoltage,pressureCommanded,pressureError,pressure");
   
 }
  
